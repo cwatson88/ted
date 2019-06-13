@@ -14,28 +14,24 @@ scopes.map(scope => provider.addScope(scope));
 const SignIn = () => {
   const [user, setUser] = useState(["empty"]);
 
-  useEffect(() => {
+  const getUser = async () => {
     try {
-      !firebase.apps.length
-        ? firebase.initializeApp(firebaseConfig)
-        : firebase.app();
-      console.log(firebase.app());
-      firebase
-        .auth()
-        .currentUser.getIdToken()
-        .then(idToken => {
-          // idToken can be passed back to server.
-          console.log(idToken);
-        })
-        .catch(error => {
-          console.error(error);
-          // Error occurred.
-        });
-      const user = firebase.auth().onAuthStateChanged(console.log);
-      console.log(user);
+      // if the app is not initailised, initalise it
+      (await !firebase.apps.length)
+        ? await firebase.initializeApp(firebaseConfig)
+        : await firebase.app();
+
+      // check if the auth state changes
+      firebase.auth().onAuthStateChanged(({ displayName, email }) => {
+        console.log(displayName, email);
+        setUser(displayName);
+      });
     } catch (err) {
       console.log(err);
     }
+  };
+  useEffect(() => {
+    getUser();
   });
 
   const fbSignIn = () => {
@@ -45,23 +41,14 @@ const SignIn = () => {
       .then(result => {
         // This gives you a Google Access Token. You can use it to access the Google API.
         const token = result.credential.accessToken;
-        // The signed-in user info.
-        //   const user = result.user;
 
+        // signed in user details
         const { name, email } = result.additionalUserInfo.profile;
         setUser(name);
         console.log(name, email);
-        // ...
       })
       .catch(function(error) {
-        // Handle Errors here.
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // The email of the user's account used.
-        const email = error.email;
-        // The firebase.auth.AuthCredential type that was used.
-        const credential = error.credential;
-        // ...
+        console.error(error);
       });
   };
 
@@ -70,7 +57,8 @@ const SignIn = () => {
       <button type="button" onClick={fbSignIn}>
         Sign In
       </button>
-      user
+      user:
+      <br />
       {user}
     </div>
   );
